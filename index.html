@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Expert Assessment & Quiz Generator - ExamOnLan Ready</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- docx Library -->
+    <script src="https://unpkg.com/docx@8.2.2/build/index.umd.js"></script>
+    <!-- FileSaver -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-indigo-600 rounded-lg">
+                    <i data-lucide="brain-circuit" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">AI Quiz Generator</h1>
+                    <p class="text-xs text-slate-400">Standar ExamOnLan & Kurikulum Merdeka</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button onclick="openApiModal()" class="flex items-center space-x-2 text-xs bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg border border-slate-700 transition">
+                    <i data-lucide="key" class="w-4 h-4 text-amber-400"></i>
+                    <span>Gemini API Key</span>
+                    <span id="apiStatusBadge" class="w-2 h-2 rounded-full bg-rose-500"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT: FORM INPUT (4 Cols) -->
+        <section class="lg:col-span-4 space-y-5">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h2 class="font-bold text-slate-900 flex items-center space-x-2 border-b border-slate-100 pb-3">
+                    <i data-lucide="sliders" class="w-5 h-5 text-indigo-600"></i>
+                    <span>Konfigurasi Soal</span>
+                </h2>
+
+                <!-- Jenjang & Kelas -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jenjang</label>
+                        <select id="jenjang" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 bg-white">
+                            <option value="SD">SD</option>
+                            <option value="SMP" selected>SMP</option>
+                            <option value="SMA">SMA</option>
+                            <option value="SMK">SMK</option>
+                            <option value="Perguruan Tinggi">Perguruan Tinggi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kelas</label>
+                        <input type="text" id="kelas" value="Kelas 8" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Mata Pelajaran -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mata Pelajaran</label>
+                    <input type="text" id="mapel" value="Bahasa Indonesia" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500" placeholder="Contoh: Matematika, IPA">
+                </div>
+
+                <!-- Capaian Pembelajaran / Materi -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Capaian Pembelajaran / Materi</label>
+                    <textarea id="materi" rows="3" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500" placeholder="Masukkan CP atau topik materi spesifik...">Teks Laporan Hasil Observasi, Iklan, Slogan, Poster, dan Artikel Ilmiah Populer</textarea>
+                </div>
+
+                <!-- Komposisi Tipe Soal -->
+                <div class="space-y-2 border-t border-slate-100 pt-3">
+                    <label class="block text-xs font-bold text-slate-800">Jumlah & Tipe Soal</label>
+                    
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
+                            <span>PG Single</span>
+                            <input type="number" id="num_pg" value="5" min="0" onchange="updateTotalQuestions()" class="w-12 text-center p-1 border rounded bg-white font-semibold">
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
+                            <span>PG Kompleks</span>
+                            <input type="number" id="num_pgk" value="2" min="0" onchange="updateTotalQuestions()" class="w-12 text-center p-1 border rounded bg-white font-semibold">
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
+                            <span>Benar / Salah</span>
+                            <input type="number" id="num_bs" value="2" min="0" onchange="updateTotalQuestions()" class="w-12 text-center p-1 border rounded bg-white font-semibold">
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
+                            <span>Menjodohkan</span>
+                            <input type="number" id="num_match" value="1" min="0" onchange="updateTotalQuestions()" class="w-12 text-center p-1 border rounded bg-white font-semibold">
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
+                            <span>Isian Singkat</span>
+                            <input type="number" id="num_isian" value="1" min="0" onchange="updateTotalQuestions()" class="w-12 text-center p-1 border rounded bg-white font-semibold">
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
+                            <span>Essai / Uraian</span>
+                            <input type="number" id="num_essai" value="1" min="0" onchange="updateTotalQuestions()" class="w-12 text-center p-1 border rounded bg-white font-semibold">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proporsi Kognitif Manual / Otomatis -->
+                <div class="space-y-3 border-t border-slate-100 pt-3 text-xs">
+                    <div class="flex justify-between items-center">
+                        <label class="font-bold text-slate-800">Distribusi Level Kognitif</label>
+                        <span id="totalSoalInfo" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-bold">Total: 12 Soal</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <!-- LOTS -->
+                        <div class="p-2.5 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 space-y-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-[11px]">LOTS</span>
+                                <span class="text-[9px] text-emerald-600 font-medium">(C1-C2)</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <input type="number" id="input_lots" value="30" min="0" max="100" class="w-full text-center p-1 border border-emerald-300 rounded bg-white font-bold text-xs text-emerald-900 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                                <span class="font-bold text-emerald-700">%</span>
+                            </div>
+                        </div>
+
+                        <!-- MOTS -->
+                        <div class="p-2.5 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 space-y-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-[11px]">MOTS</span>
+                                <span class="text-[9px] text-amber-600 font-medium">(C3)</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <input type="number" id="input_mots" value="50" min="0" max="100" class="w-full text-center p-1 border border-amber-300 rounded bg-white font-bold text-xs text-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                                <span class="font-bold text-amber-700">%</span>
+                            </div>
+                        </div>
+
+                        <!-- HOTS -->
+                        <div class="p-2.5 bg-rose-50 text-rose-800 rounded-xl border border-rose-200 space-y-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-[11px]">HOTS</span>
+                                <span class="text-[9px] text-rose-600 font-medium">(C4-C6)</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <input type="number" id="input_hots" value="20" min="0" max="100" class="w-full text-center p-1 border border-rose-300 rounded bg-white font-bold text-xs text-rose-900 focus:outline-none focus:ring-1 focus:ring-rose-500">
+                                <span class="font-bold text-rose-700">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 italic text-center">*Atur persentase manual untuk LOTS, MOTS, dan HOTS (Total ideal: 100%)</p>
+                </div>
+
+                <!-- Generate Button -->
+                <button onclick="generateQuiz()" id="btnGenerate" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center space-x-2 transition">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    <span>Buat Paket Soal AI</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- RIGHT: OUTPUT VIEW (8 Cols) -->
+        <section class="lg:col-span-8 space-y-4">
+            
+            <!-- ACTION BAR -->
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-2">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider px-2">Hasil Naskah Soal</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportToDocx()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-sm transition">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <span>Download DOCX (ExamOnLan)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- RESULT DISPLAY AREA -->
+            <div id="outputContainer" class="space-y-4">
+                <div class="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto">
+                        <i data-lucide="file-spreadsheets" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800">Belum Ada Soal Dijana</h3>
+                    <p class="text-xs text-slate-500 max-w-md mx-auto">Atur parameter konfigurasi soal di sebelah kiri lalu klik tombol "Buat Paket Soal AI" untuk menghasilkan naskah soal otomatis.</p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- MODAL GEMINI API KEY -->
+    <div id="apiModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 flex items-center space-x-2">
+                    <i data-lucide="key" class="w-5 h-5 text-amber-500"></i>
+                    <span>Pengaturan Gemini API Key</span>
+                </h3>
+                <button onclick="closeApiModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <p class="text-xs text-slate-600">Masukkan API Key Gemini Anda untuk terhubung langsung dengan AI Online (Google Gemini AI Studio).</p>
+            <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500">
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeApiModal()" class="px-4 py-2 text-xs font-semibold text-slate-600">Batal</button>
+                <button onclick="saveApiKey()" class="px-4 py-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg">Simpan & Hubungkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        lucide.createIcons();
+
+        let generatedQuizData = null;
+
+        // Init API Key State & Count
+        window.onload = function() {
+            const key = localStorage.getItem("GEMINI_API_KEY");
+            const badge = document.getElementById("apiStatusBadge");
+            if(key) {
+                badge.className = "w-2 h-2 rounded-full bg-emerald-500";
+            }
+            updateTotalQuestions();
+        }
+
+        function updateTotalQuestions() {
+            const total = (parseInt(document.getElementById("num_pg").value) || 0) +
+                          (parseInt(document.getElementById("num_pgk").value) || 0) +
+                          (parseInt(document.getElementById("num_bs").value) || 0) +
+                          (parseInt(document.getElementById("num_match").value) || 0) +
+                          (parseInt(document.getElementById("num_isian").value) || 0) +
+                          (parseInt(document.getElementById("num_essai").value) || 0);
+            document.getElementById("totalSoalInfo").innerText = `Total: ${total} Soal`;
+        }
+
+        function openApiModal() {
+            document.getElementById("apiKeyInput").value = localStorage.getItem("GEMINI_API_KEY") || "";
+            document.getElementById("apiModal").classList.remove("hidden");
+        }
+
+        function closeApiModal() {
+            document.getElementById("apiModal").classList.add("hidden");
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById("apiKeyInput").value.trim();
+            if(key) {
+                localStorage.setItem("GEMINI_API_KEY", key);
+                document.getElementById("apiStatusBadge").className = "w-2 h-2 rounded-full bg-emerald-500";
+            } else {
+                localStorage.removeItem("GEMINI_API_KEY");
+                document.getElementById("apiStatusBadge").className = "w-2 h-2 rounded-full bg-rose-500";
+            }
+            closeApiModal();
+        }
+
+        // GENERATE QUIZ LOGIC
+        async function generateQuiz() {
+            const btn = document.getElementById("btnGenerate");
+            const container = document.getElementById("outputContainer");
+            const apiKey = localStorage.getItem("GEMINI_API_KEY");
+
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Proses AI...</span>`;
+            lucide.createIcons();
+
+            const config = {
+                jenjang: document.getElementById("jenjang").value,
+                kelas: document.getElementById("kelas").value,
+                mapel: document.getElementById("mapel").value,
+                materi: document.getElementById("materi").value,
+                pg: parseInt(document.getElementById("num_pg").value) || 0,
+                pgk: parseInt(document.getElementById("num_pgk").value) || 0,
+                bs: parseInt(document.getElementById("num_bs").value) || 0,
+                match: parseInt(document.getElementById("num_match").value) || 0,
+                isian: parseInt(document.getElementById("num_isian").value) || 0,
+                essai: parseInt(document.getElementById("num_essai").value) || 0,
+                lots: parseInt(document.getElementById("input_lots").value) || 0,
+                mots: parseInt(document.getElementById("input_mots").value) || 0,
+                hots: parseInt(document.getElementById("input_hots").value) || 0
+            };
+
+            if(apiKey) {
+                try {
+                    generatedQuizData = await callGeminiApi(apiKey, config);
+                } catch(e) {
+                    alert("Gagal terhubung ke Gemini API: " + e.message + ". Menggunakan Demo Generator Mode.");
+                    generatedQuizData = generateDemoData(config);
+                }
+            } else {
+                // Fallback Demo Generator
+                generatedQuizData = generateDemoData(config);
+            }
+
+            renderOutput(generatedQuizData);
+
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i><span>Buat Paket Soal AI</span>`;
+            lucide.createIcons();
+        }
+
+        // GEMINI API CALL
+        async function callGeminiApi(key, config) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`;
+            
+            const prompt = `Anda adalah pakar pembuat soal sekolah. Buatkan paket soal dengan parameter:
+Jenjang: ${config.jenjang}, Kelas: ${config.kelas}, Mapel: ${config.mapel}, Materi: ${config.materi}.
+Jumlah Soal:
+- PG Single Answer: ${config.pg}
+- PG Kompleks (Multi-jawaban): ${config.pgk}
+- Benar/Salah: ${config.bs}
+- Menjodohkan: ${config.match}
+- Isian Singkat: ${config.isian}
+- Essai: ${config.essai}
+
+Proporsi Kognitif Manual:
+- LOTS (C1-C2): ${config.lots}%
+- MOTS (C3): ${config.mots}%
+- HOTS (C4-C6): ${config.hots}%
+
+Kembalikan HANYA format JSON murni tanpa markdown triple backtick dengan struktur:
+{
+  "title": "Paket Soal ExamOnLan",
+  "questions": [
+    {
+      "number": 1,
+      "type": "PG", // PG, PGK, BS, MATCH, ISIAN, ESSAI
+      "level": "LOTS", // LOTS, MOTS, HOTS
+      "bloom": "C2",
+      "question": "Teks pertanyaan",
+      "options": ["A. Opsi 1", "B. Opsi 2", "C. Opsi 3", "D. Opsi 4"], // Jika PG/PGK/BS
+      "key": "A", // "A" atau "A, C" untuk PGK atau "A. Benar"
+      "matchingPairs": ["Pernyataan A - Pasangan A", "Pernyataan B - Pasangan B"], // Jika MATCH
+      "explanation": "Pembahasan..."
+    }
+  ]
+}`;
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            const data = await res.json();
+            const textResponse = data.candidates[0].content.parts[0].text;
+            const cleanedJson = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanedJson);
+        }
+
+        // DEMO DATA FALLBACK
+        function generateDemoData(config) {
+            let questions = [];
+            let qNum = 1;
+
+            for(let i=0; i<config.pg; i++) {
+                questions.push({
+                    number: qNum++,
+                    type: "PG",
+                    level: "LOTS",
+                    bloom: "C2",
+                    question: `Pengertian utama dari Teks Laporan Hasil Observasi (LHO) adalah...`,
+                    options: [
+                        "A. Teks rekaan berdasarkan imajinasi pengamat",
+                        "B. Teks yang menyajikan informasi faktual hasil pengamatan langsung",
+                        "C. Teks yang berisi ajakan bujukan",
+                        "D. Teks penjelasan tahapan prosedur"
+                    ],
+                    key: "B",
+                    explanation: "Teks LHO harus berdasarkan fakta hasil pengamatan langsung."
+                });
+            }
+
+            for(let i=0; i<config.bs; i++) {
+                questions.push({
+                    number: qNum++,
+                    type: "BS",
+                    level: "LOTS",
+                    bloom: "C1",
+                    question: `Teks Laporan Hasil Observasi memuat informasi yang didasarkan pada imajinasi tanpa pengamatan langsung.`,
+                    options: ["A. Benar", "B. Salah"],
+                    key: "B",
+                    explanation: "Pernyataan salah karena LHO berbasis fakta nyata."
+                });
+            }
+
+            for(let i=0; i<config.pgk; i++) {
+                questions.push({
+                    number: qNum++,
+                    type: "PGK",
+                    level: "MOTS",
+                    bloom: "C3",
+                    question: `Pernyataan yang BENAR mengenai ciri Teks LHO adalah...`,
+                    options: [
+                        "A. Ditulis berdasarkan hasil pengamatan langsung dan bersifat faktual",
+                        "B. Berisi rekaan imajinasi serta perasaan pribadi",
+                        "C. Menggunakan kalimat deskripsi yang jelas mengenai objek",
+                        "D. Bertujuan mempromosikan barang"
+                    ],
+                    key: "A, C",
+                    explanation: "Ciri utama LHO adalah faktual dan berupa deskripsi objek."
+                });
+            }
+
+            for(let i=0; i<config.match; i++) {
+                questions.push({
+                    number: qNum++,
+                    type: "MATCH",
+                    level: "MOTS",
+                    bloom: "C3",
+                    question: `Jodohkanlah istilah berikut dengan pengertiannya yang tepat!`,
+                    matchingPairs: [
+                        "Teks LHO - Laporan hasil pengamatan langsung",
+                        "Iklan - Sarana promosi barang/jasa",
+                        "Slogan - Kalimat singkat memotivasi"
+                    ],
+                    key: "Pasangan sesuai urutan di atas",
+                    explanation: "Pasangan yang tepat disesuaikan dengan definisi masing-masing."
+                });
+            }
+
+            for(let i=0; i<config.isian; i++) {
+                questions.push({
+                    number: qNum++,
+                    type: "ISIAN",
+                    level: "MOTS",
+                    bloom: "C3",
+                    question: `Gaya bahasa yang digunakan dalam artikel ilmiah populer agar mudah dipahami masyarakat awam bersifat...`,
+                    key: "Komunikatif / Santai / Populer",
+                    explanation: "Artikel ilmiah populer disajikan secara komunikatif."
+                });
+            }
+
+            for(let i=0; i<config.essai; i++) {
+                questions.push({
+                    number: qNum++,
+                    type: "ESSAI",
+                    level: "HOTS",
+                    bloom: "C4",
+                    question: `Jelaskan perbedaan mendasar antara teks LHO dan teks fiksi ilmiah!`,
+                    key: "LHO berbasis fakta riil pengamatan, sedangkan fiksi ilmiah berbasis imajinasi.",
+                    explanation: "Rubrik penilaian: Kelengkapan fakta dan tata bahasa."
+                });
+            }
+
+            return { title: `Soal ${config.mapel} ${config.kelas}`, questions: questions };
+        }
+
+        // RENDER OUTPUT TO SCREEN
+        function renderOutput(data) {
+            const container = document.getElementById("outputContainer");
+            container.innerHTML = "";
+
+            data.questions.forEach(q => {
+                let badgeColor = "bg-emerald-100 text-emerald-800";
+                if(q.level === "MOTS") badgeColor = "bg-amber-100 text-amber-800";
+                if(q.level === "HOTS") badgeColor = "bg-rose-100 text-rose-800";
+
+                let contentHtml = `<p class="font-semibold text-slate-900 mb-2">${q.number}. ${q.question}</p>`;
+
+                if(q.options) {
+                    contentHtml += `<div class="grid grid-cols-1 md:grid-cols-2 gap-1 mb-2 text-xs">`;
+                    q.options.forEach(opt => {
+                        contentHtml += `<div class="p-1.5 bg-slate-50 border rounded">${opt}</div>`;
+                    });
+                    contentHtml += `</div>`;
+                }
+
+                if(q.matchingPairs) {
+                    contentHtml += `<div class="p-2 bg-slate-50 border rounded text-xs mb-2 space-y-1">`;
+                    q.matchingPairs.forEach(mp => {
+                        contentHtml += `<div>• ${mp}</div>`;
+                    });
+                    contentHtml += `</div>`;
+                }
+
+                contentHtml += `<div class="mt-2 text-xs font-bold text-indigo-700 bg-indigo-50 p-2 rounded">Kunci: ${q.key}</div>`;
+
+                const card = document.createElement("div");
+                card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-xs border-b pb-2 mb-2">
+                        <span class="font-bold text-slate-500">Soal No. ${q.number} (${q.type})</span>
+                        <div class="flex space-x-1">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeColor}">${q.level}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">${q.bloom}</span>
+                        </div>
+                    </div>
+                    ${contentHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // EXPORT TO DOCX (EXAMONLAN FORMAT)
+        function exportToDocx() {
+            if(!generatedQuizData) {
+                alert("Belum ada soal yang dibuat.");
+                return;
+            }
+
+            const { Document, Paragraph, TextRun, Packer } = docx;
+            const docChildren = [];
+
+            generatedQuizData.questions.forEach((q) => {
+                // 1. Question Text Paragraph
+                docChildren.push(new Paragraph({
+                    children: [
+                        new TextRun({ text: `${q.number}. ${q.question}`, bold: true, size: 22 })
+                    ],
+                    spacing: { before: 120, after: 60 }
+                }));
+
+                // 2. Options (if PG, PGK, BS)
+                if(q.options && q.options.length > 0) {
+                    q.options.forEach(opt => {
+                        docChildren.push(new Paragraph({
+                            children: [ new TextRun({ text: opt, size: 20 }) ],
+                            spacing: { after: 40 }
+                        }));
+                    });
+                }
+
+                // 3. Matching Pairs (if MATCH)
+                if(q.matchingPairs && q.matchingPairs.length > 0) {
+                    q.matchingPairs.forEach(pair => {
+                        docChildren.push(new Paragraph({
+                            children: [ new TextRun({ text: pair, size: 20 }) ],
+                            spacing: { after: 40 }
+                        }));
+                    });
+                }
+
+                // 4. Kunci Line (Formatted like ExamOnLan: Kunci: X)
+                docChildren.push(new Paragraph({
+                    children: [
+                        new TextRun({ text: `Kunci: ${q.key}`, bold: true, size: 20 })
+                    ],
+                    spacing: { after: 120 }
+                }));
+            });
+
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: docChildren
+                }]
+            });
+
+            Packer.toBlob(doc).then(blob => {
+                saveAs(blob, `${generatedQuizData.title || "Soal_ExamOnLan"}.docx`);
+            });
+        }
+    </script>
+</body>
+</html>
